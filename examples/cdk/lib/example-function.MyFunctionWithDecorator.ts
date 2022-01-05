@@ -6,19 +6,23 @@ import { Logger } from '@aws-lambda-powertools/logger';
 const namespace = 'CDKExample';
 const serviceName = 'MyFunctionWithDecorator';
 
-const metrics = new Metrics({ namespace: namespace, service: serviceName });
+const metrics = new Metrics({ namespace: namespace, serviceName: serviceName });
 const logger = new Logger({ logLevel: 'INFO', serviceName: serviceName });
 const tracer = new Tracer({ serviceName: serviceName });
 
 export class MyFunctionWithDecorator {
-  @tracer.captureLambdaHanlder()
+  @tracer.captureLambdaHandler()
   @logger.injectLambdaContext()
   @metrics.logMetrics({
     captureColdStartMetric: true,
     raiseOnEmptyMetrics: true,
     defaultDimensions: { environment: 'example', type: 'withDecorator' },
   })
-  public handler(_event: unknown, _context: Context, _callback: Callback<unknown>): void | Promise<unknown> {
+  public handler(
+    _event: unknown,
+    _context: Context,
+    _callback: Callback<unknown>,
+  ): void | Promise<unknown> {
     // ### Experiment logger
     logger.addPersistentLogAttributes({
       testKey: 'testValue',
@@ -33,10 +37,14 @@ export class MyFunctionWithDecorator {
 
     const metricWithItsOwnDimensions = metrics.singleMetric();
     metricWithItsOwnDimensions.addDimension('InnerDimension', 'true');
-    metricWithItsOwnDimensions.addMetric('single-metric', MetricUnits.Percent, 50);
+    metricWithItsOwnDimensions.addMetric(
+      'single-metric',
+      MetricUnits.Percent,
+      50,
+    );
 
     // ### Experiment tracer
-    tracer.putAnnotation('Myannotation', 'My annotation\'s value');
+    tracer.putAnnotation('Myannotation', "My annotation's value");
 
     // Create subsegment & set it as active
     const segment = tracer.getSegment(); // This is the facade segment (the one that is created by Lambda & that can't be manipulated)
